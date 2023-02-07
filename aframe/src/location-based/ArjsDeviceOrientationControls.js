@@ -64,31 +64,15 @@ const ArjsDeviceOrientationControls = function (object) {
   this.connect = function () {
     onScreenOrientationChangeEvent();
 
-    window.addEventListener(
-      "orientationchange",
-      onScreenOrientationChangeEvent,
-      false
-    );
-    window.addEventListener(
-      "deviceorientation",
-      onDeviceOrientationChangeEvent,
-      false
-    );
+    window.addEventListener("orientationchange", onScreenOrientationChangeEvent, false);
+    window.addEventListener("deviceorientation", onDeviceOrientationChangeEvent, false);
 
     scope.enabled = true;
   };
 
   this.disconnect = function () {
-    window.removeEventListener(
-      "orientationchange",
-      onScreenOrientationChangeEvent,
-      false
-    );
-    window.removeEventListener(
-      "deviceorientation",
-      onDeviceOrientationChangeEvent,
-      false
-    );
+    window.removeEventListener("orientationchange", onScreenOrientationChangeEvent, false);
+    window.removeEventListener("deviceorientation", onDeviceOrientationChangeEvent, false);
 
     scope.enabled = false;
   };
@@ -97,42 +81,28 @@ const ArjsDeviceOrientationControls = function (object) {
     if (scope.enabled === false) return;
 
     var device = scope.deviceOrientation;
-
+    console.log(device);
+    console.log("this.update");
     if (device) {
+      console.log("iOS compass-calibrated 'alpha' patch");
       // iOS compass-calibrated 'alpha' patch
       // see: http://lists.w3.org/Archives/Public/public-geolocation/2011Jul/0014.html
       var heading = device.webkitCompassHeading || device.compassHeading;
 
-      var alpha = device.alpha || heading
-          ? MathUtils.degToRad(
-              heading
-              ? 360 - heading
-              : device.alpha || 0) + scope.alphaOffset
-          : 0; // Z
+      var alpha = device.alpha || heading ? MathUtils.degToRad(heading ? 360 - heading : device.alpha || 0) + scope.alphaOffset : 0; // Z
       var beta = device.beta ? THREE.Math.degToRad(device.beta) : 0; // X'
 
       var gamma = device.gamma ? THREE.Math.degToRad(device.gamma) : 0; // Y''
 
-      var orient = scope.screenOrientation
-        ? THREE.Math.degToRad(scope.screenOrientation)
-        : 0; // O
+      var orient = scope.screenOrientation ? THREE.Math.degToRad(scope.screenOrientation) : 0; // O
 
       // NW Added smoothing code
       var k = this.smoothingFactor;
 
       if (this.lastOrientation) {
         alpha = this._getSmoothedAngle(alpha, this.lastOrientation.alpha, k);
-        beta = this._getSmoothedAngle(
-          beta + Math.PI,
-          this.lastOrientation.beta,
-          k
-        );
-        gamma = this._getSmoothedAngle(
-          gamma + this.HALF_PI,
-          this.lastOrientation.gamma,
-          k,
-          Math.PI
-        );
+        beta = this._getSmoothedAngle(beta + Math.PI, this.lastOrientation.beta, k);
+        gamma = this._getSmoothedAngle(gamma + this.HALF_PI, this.lastOrientation.gamma, k, Math.PI);
       } else {
         beta += Math.PI;
         gamma += this.HALF_PI;
@@ -143,22 +113,13 @@ const ArjsDeviceOrientationControls = function (object) {
         beta: beta,
         gamma: gamma,
       };
-      setObjectQuaternion(
-        scope.object.quaternion,
-        alpha,
-        beta - Math.PI,
-        gamma - this.HALF_PI,
-        orient
-      );
+      setObjectQuaternion(scope.object.quaternion, alpha, beta - Math.PI, gamma - this.HALF_PI, orient);
     }
   };
 
   // NW Added
   this._orderAngle = function (a, b, range = this.TWO_PI) {
-    if (
-      (b > a && Math.abs(b - a) < range / 2) ||
-      (a > b && Math.abs(b - a) > range / 2)
-    ) {
+    if ((b > a && Math.abs(b - a) < range / 2) || (a > b && Math.abs(b - a) > range / 2)) {
       return { left: a, right: b };
     } else {
       return { left: b, right: a };
@@ -173,10 +134,7 @@ const ArjsDeviceOrientationControls = function (object) {
     angles.left = 0;
     angles.right -= angleshift;
     if (angles.right < 0) angles.right += range;
-    let newangle =
-      origAnglesRight == b
-        ? (1 - k) * angles.right + k * angles.left
-        : k * angles.right + (1 - k) * angles.left;
+    let newangle = origAnglesRight == b ? (1 - k) * angles.right + k * angles.left : k * angles.right + (1 - k) * angles.left;
     newangle += angleshift;
     if (newangle >= range) newangle -= range;
     return newangle;
